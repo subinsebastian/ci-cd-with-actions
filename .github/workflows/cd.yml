@@ -1,42 +1,59 @@
-# This is a basic workflow to help you get started with Actions
+# CD workflow for React app
 
 name: React App CD
 
-# Controls when the action will run. 
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
-    branches: 
-      - main
-      - releases/*
+    branches:
+    - main
+    - releases/*
+
 env:
   owner: subinsebastian
   domain: github.io
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   deploy-dev-test:
-    name: Deploy to Dev-Test environment
-    # The type of runner that the job will run on
+    name: Deploy to Dev test environment
     runs-on: ubuntu-latest
-    environment:
+    environment: 
       name: DevTest
       url: https://${{ env.owner }}.${{ env.domain }}/${{ env.repo }}//
     env:
       repo: ci-cd-with-actions
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Checkout
-      - uses: actions/checkout@v2
-      - name: Install and build
+      - name: Checkout 
+        uses: actions/checkout@v2.3.1
+      - name: Install and Build
         run: |
           npm install
-          npm build
-      - name: Deploy
+          npm run build
+      - name: Deploy 
         uses: JamesIves/github-pages-deploy-action@4.1.0
         with:
+          branch: gh-pages # The branch the action should deploy to.
+          folder: build # The folder the action should deploy.
+
+  deploy-prod:
+    name: Deploy to Production environment
+    needs: [deploy-dev-test]
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://${{ env.owner }}.${{ env.domain }}/${{ env.repo }}//
+    env:
+      repo: actions-workshop-prod
+    steps:
+      - name: Checkout 
+        uses: actions/checkout@v2.3.1
+      - name: Install and Build
+        run: |
+          npm install
+          npm run build
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@4.1.0
+        with: 
           branch: gh-pages
           folder: build
-
+          token: ${{ secrets.TOKEN }}
+          repository-name: ${{ env.owner }}/${{ env.repo }}
